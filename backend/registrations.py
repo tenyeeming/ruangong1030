@@ -1,13 +1,16 @@
-"""秉軒：送出報名、查詢活動報名清單。"""
+"""秉軒：送出報名、查詢活動報名清單（Pro：防重複報名、截止報名、報名人數）。"""
 
 import re
 from datetime import datetime
 
 from flask import Blueprint, jsonify, request
 
-from .db import cursor, execute, get_db
+from .db import cursor, execute, get_db, is_integrity_error
+from .events import is_closed
 
 registrations_bp = Blueprint("registrations", __name__)
+
+DUPLICATE_MESSAGE = "您已報名過此活動（同名且同電話）"
 
 
 def error(message, status=400):
@@ -35,15 +38,33 @@ def register(event_id):
         return error("電話須為 09 開頭的 10 位數字")
 
     with cursor() as result:
-        execute(result, "SELECT id FROM events WHERE id = ?", (event_id,))
-        if result.fetchone() is None:
+        execute(result, "SELECT id, deadline FROM events WHERE id = ?", (event_id,))
+        event = result.fetchone()
+        if event is None:
             return error("活動不存在", 404)
+        if is_closed(event["deadline"]):
+            return error("此活動已截止報名", 403)
+
         execute(
             result,
-            "INSERT INTO registrations (event_id, name, phone) VALUES (?, ?, ?)",
+            "SELECT id FROM registrations WHERE event_id = ? AND name = ? AND phone = ?",
             (event_id, name, phone),
         )
-        get_db().commit()
+        if result.fetchone() is not None:
+            return error(DUPLICATE_MESSAGE, 409)
+
+        # 兩人同時送出時，上面的檢查可能都通過；由資料表的 UNIQUE 擋下第二筆。
+        try:
+            execute(
+                result,
+                "INSERT INTO registrations (event_id, name, phone) VALUES (?, ?, ?)",
+                (event_id, name, phone),
+            )
+            get_db().commit()
+        except Exception as exception:
+            if not is_integrity_error(exception):
+                raise
+            return error(DUPLICATE_MESSAGE, 409)
     return jsonify(ok=True), 201
 
 
@@ -72,6 +93,7 @@ def list_registrations(event_id):
             })
     response = jsonify(
         event={"id": event["id"], "title": event["title"]},
+        count=len(registrations),
         registrations=registrations,
     )
     response.headers["Cache-Control"] = "no-store"

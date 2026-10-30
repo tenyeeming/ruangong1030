@@ -109,8 +109,52 @@ class RegistrationTests(unittest.TestCase):
     def test_empty_registration_list(self):
         response = self.client.get("/api/events/1/registrations")
         self.assertEqual(response.json, {
-            "event": {"id": 1, "title": "迎新晚會"}, "registrations": [],
+            "event": {"id": 1, "title": "迎新晚會"}, "count": 0, "registrations": [],
         })
+
+    def test_list_shows_count(self):
+        self.signup({"name": "王小明", "phone": "0912345678"})
+        self.signup({"name": "李小華", "phone": "0912345679"})
+        self.assertEqual(self.client.get("/api/events/1/registrations").json["count"], 2)
+
+    def test_duplicate_same_name_and_phone_is_rejected(self):
+        self.assertEqual(self.signup({"name": "王小明", "phone": "0912345678"}).status_code, 201)
+        response = self.signup({"name": " 王小明 ", "phone": "0912345678"})
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json, {"ok": False, "error": "您已報名過此活動（同名且同電話）"})
+        self.assertEqual(self.client.get("/api/events/1/registrations").json["count"], 1)
+
+    def test_same_name_or_phone_alone_is_not_duplicate(self):
+        self.signup({"name": "王小明", "phone": "0912345678"})
+        self.assertEqual(self.signup({"name": "王小明", "phone": "0912345679"}).status_code, 201)
+        self.assertEqual(self.signup({"name": "李小華", "phone": "0912345678"}).status_code, 201)
+        self.assertEqual(self.signup({"name": "王小明", "phone": "0912345678"}, 2).status_code, 201)
+
+    def test_database_unique_constraint_blocks_race(self):
+        # 兩個請求同時通過重複檢查時，資料表的 UNIQUE 是最後一道防線
+        self.signup({"name": "王小明", "phone": "0912345678"})
+        with self.assertRaises(sqlite3.IntegrityError), database(self.path) as connection:
+            connection.execute(
+                "INSERT INTO registrations (event_id, name, phone) VALUES (1, '王小明', '0912345678')"
+            )
+
+    def test_integrity_error_on_insert_returns_409(self):
+        with patch("backend.registrations.get_db") as connection:
+            connection.return_value.commit.side_effect = sqlite3.IntegrityError("UNIQUE constraint failed")
+            response = self.signup({"name": "王小明", "phone": "0912345678"})
+        self.assertEqual(response.status_code, 409)
+        self.assertFalse(response.json["ok"])
+
+    def test_closed_event_rejects_registration(self):
+        with database(self.path) as connection:
+            connection.execute("UPDATE events SET deadline = '2000-01-01 00:00:00' WHERE id = 1")
+            connection.execute("UPDATE events SET deadline = '2999-12-31 23:59:00' WHERE id = 2")
+        response = self.signup({"name": "王小明", "phone": "0912345678"}, 1)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.json, {"ok": False, "error": "此活動已截止報名"})
+        self.assertEqual(self.signup({"name": "王小明", "phone": "0912345678"}, 2).status_code, 201)
+        # 截止後仍可查看名單
+        self.assertEqual(self.client.get("/api/events/1/registrations").status_code, 200)
 
     def test_does_not_mix_other_events(self):
         self.signup({"name": "王小明", "phone": "0912345678"}, 2)

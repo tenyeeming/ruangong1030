@@ -51,6 +51,17 @@ def execute(result, sql, parameters=()):
     return result.execute(sql, parameters)
 
 
+def is_integrity_error(exception):
+    # 違反 UNIQUE 等限制時，SQLite 和 PyMySQL 各自丟不同的例外。
+    if isinstance(exception, sqlite3.IntegrityError):
+        return True
+    if current_app.config["DB_DRIVER"] == "mysql":
+        import pymysql
+
+        return isinstance(exception, pymysql.err.IntegrityError)
+    return False
+
+
 def close_db(error=None):
     connection = g.pop("signup_db", None)
     if connection is not None:

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS events (
     title VARCHAR(100) NOT NULL,
     description TEXT,
     event_date DATETIME,
+    deadline DATETIME,
     created_at DATETIME DEFAULT (datetime('now', 'localtime'))
 );
 
@@ -14,5 +15,6 @@ CREATE TABLE IF NOT EXISTS registrations (
     name VARCHAR(50) NOT NULL,
     phone VARCHAR(20) NOT NULL,
     created_at DATETIME DEFAULT (datetime('now', 'localtime')),
-    FOREIGN KEY (event_id) REFERENCES events(id)
+    FOREIGN KEY (event_id) REFERENCES events(id),
+    UNIQUE (event_id, name, phone)
 );
