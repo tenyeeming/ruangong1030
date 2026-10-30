@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>🏚️ 廢墟活動平台 - 查看報名清單</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="container">
+    <h1>📊 後台：查看活動報名清單</h1>
+    <h3 style="color: #888;">活動：<span id="event-name" style="color:#fff;">-</span></h3>
+
+    <table id="reg-table" style="display: none;">
+        <thead>
+            <tr>
+                <th>報名者姓名</th>
+                <th>聯絡電話</th>
+                <th>報名時間</th>
+            </tr>
+        </thead>
+        <tbody id="reg-list"></tbody>
+    </table>
+
+    <div id="message" class="muted" style="margin: 20px 0;">載入中...</div>
+
+    <hr style="margin-top: 30px;">
+    <a href="index.html" class="back-link">⬅️ 返回活動清單</a>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('id');
+
+    async function loadRegistrations() {
+        const message = document.getElementById('message');
+        const data = await getRegistrations(eventId);
+
+        if (data.ok === false || !data.event) {
+            message.className = 'error';
+            message.textContent = '載入名單失敗：' + (data.error || '資料格式錯誤');
+            return;
+        }
+
+        document.getElementById('event-name').textContent = data.event.title;
+
+        if (!data.registrations || data.registrations.length === 0) {
+            message.textContent = '目前尚無報名。';
+            return;
+        }
+
+        message.style.display = 'none';
+        document.getElementById('reg-table').style.display = 'table';
+        document.getElementById('reg-list').innerHTML = data.registrations.map(r => `
+            <tr>
+                <td>${escapeHtml(r.name)}</td>
+                <td>${escapeHtml(r.phone)}</td>
+                <td>${escapeHtml(r.created_at)}</td>
+            </tr>
+        `).join('');
+    }
+    loadRegistrations();
+</script>
+</body>
+</html>

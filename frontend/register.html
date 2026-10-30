@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>🏚️ 廢墟活動平台 - 填寫報名表</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="container narrow">
+    <h1>📝 填寫活動報名表</h1>
+    <p class="highlight">
+        您正在報名：<span id="act-title">載入中...</span>
+    </p>
+
+    <form id="register-form" style="display: none;">
+        <label for="user-name">姓名（必填）：</label>
+        <input type="text" id="user-name" required maxlength="50" placeholder="請輸入您的真實姓名">
+
+        <label for="user-phone">連絡電話（必填，格式為09xxxxxxxx）：</label>
+        <input type="tel" id="user-phone" required maxlength="10" placeholder="例如：0912345678">
+
+        <button type="submit" id="submit-btn">📬 送出完成報名</button>
+    </form>
+    <hr>
+    <a href="index.html" class="back-link">⬅️ 返回活動清單</a>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('id');
+
+    // 找不到活動就不顯示報名表
+    async function loadActivityName() {
+        const titleSpan = document.getElementById('act-title');
+        const events = await getEvents();
+        if (!Array.isArray(events)) {
+            titleSpan.textContent = '載入失敗：' + events.error;
+            return;
+        }
+        const currentEvent = events.find(e => String(e.id) === eventId);
+        if (!currentEvent) {
+            titleSpan.textContent = '找不到此活動';
+            return;
+        }
+        titleSpan.textContent = currentEvent.title;
+        document.getElementById('register-form').style.display = 'block';
+    }
+    loadActivityName();
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('user-name').value.trim();
+        const phone = document.getElementById('user-phone').value.trim();
+
+        if (!name) {
+            alert('姓名不可只有空白！');
+            return;
+        }
+        if (!/^09\d{8}$/.test(phone)) {
+            alert('手機號碼格式不正確，請輸入09開頭的10位數字！');
+            return;
+        }
+
+        const btn = document.getElementById('submit-btn');
+        btn.disabled = true;
+        const res = await register(eventId, { name, phone });
+        btn.disabled = false;
+
+        if (res.ok) {
+            alert('報名成功！');
+            window.location.href = 'index.html';
+        } else {
+            alert('報名失敗：' + res.error);
+        }
+    });
+</script>
+</body>
+</html>
