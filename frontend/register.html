@@ -3,28 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>🏚️ 廢墟活動平台 - 填寫報名表</title>
+    <title>填寫報名表｜活動報名平台</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="container narrow">
-    <h1>📝 填寫活動報名表</h1>
-    <p class="highlight">
-        您正在報名：<span id="act-title">載入中...</span>
-    </p>
+<main class="container narrow">
+    <a href="index.html" class="back-link">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        返回活動清單
+    </a>
+
+    <header class="page-head">
+        <h1>填寫報名表</h1>
+    </header>
+
+    <section class="panel" aria-labelledby="act-title">
+        <p class="eyebrow">您正在報名</p>
+        <h2 id="act-title" class="summary-title">載入中...</h2>
+        <p id="act-info" class="muted"></p>
+    </section>
 
     <form id="register-form" style="display: none;">
-        <label for="user-name">姓名（必填）：</label>
-        <input type="text" id="user-name" required maxlength="50" placeholder="請輸入您的真實姓名">
+      <div class="panel form-panel">
+        <div class="field">
+            <label for="user-name">姓名<span class="field-tag required">必填</span></label>
+            <input type="text" id="user-name" required maxlength="50" autocomplete="name" placeholder="請輸入您的真實姓名">
+        </div>
 
-        <label for="user-phone">連絡電話（必填，格式為09xxxxxxxx）：</label>
-        <input type="tel" id="user-phone" required maxlength="10" placeholder="例如：0912345678">
+        <div class="field">
+            <label for="user-phone">聯絡電話<span class="field-tag required">必填</span></label>
+            <input type="tel" id="user-phone" required maxlength="10" inputmode="numeric" autocomplete="tel" placeholder="例如：0912345678" aria-describedby="phone-hint">
+            <p id="phone-hint" class="hint">09 開頭，共 10 位數字。</p>
+        </div>
 
-        <button type="submit" id="submit-btn">📬 送出完成報名</button>
+        <div class="form-actions">
+            <button type="submit" id="submit-btn" class="btn btn-primary">送出報名</button>
+        </div>
+      </div>
     </form>
-    <hr>
-    <a href="index.html" class="back-link">⬅️ 返回活動清單</a>
-</div>
+</main>
 
 <script src="js/api.js"></script>
 <script>
@@ -45,6 +62,13 @@
             return;
         }
         titleSpan.textContent = currentEvent.title;
+        const info = document.getElementById('act-info');
+        info.textContent = `報名截止：${currentEvent.deadline || '不限'} | 目前報名人數：${Number(currentEvent.count) || 0} 人`;
+        if (currentEvent.is_closed) {
+            info.textContent += '（此活動已截止報名）';
+            info.className = 'error';
+            return;
+        }
         document.getElementById('register-form').style.display = 'block';
     }
     loadActivityName();

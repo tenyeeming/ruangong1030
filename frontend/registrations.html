@@ -3,30 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>🏚️ 廢墟活動平台 - 查看報名清單</title>
+    <title>報名名單｜活動報名平台</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="container">
-    <h1>📊 後台：查看活動報名清單</h1>
-    <h3 style="color: #888;">活動：<span id="event-name" style="color:#fff;">-</span></h3>
+<main class="container">
+    <a href="index.html" class="back-link">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        返回活動清單
+    </a>
 
-    <table id="reg-table" style="display: none;">
-        <thead>
-            <tr>
-                <th>報名者姓名</th>
-                <th>聯絡電話</th>
-                <th>報名時間</th>
-            </tr>
-        </thead>
-        <tbody id="reg-list"></tbody>
-    </table>
+    <header class="page-head">
+        <h1>報名名單</h1>
+    </header>
 
-    <div id="message" class="muted" style="margin: 20px 0;">載入中...</div>
+    <section class="panel summary-row" aria-labelledby="event-name">
+        <div>
+            <p class="eyebrow">活動</p>
+            <h2 id="event-name" class="summary-title">-</h2>
+        </div>
+        <p class="reg-count-line">目前報名人數：<span id="reg-count">-</span> 人</p>
+    </section>
 
-    <hr style="margin-top: 30px;">
-    <a href="index.html" class="back-link">⬅️ 返回活動清單</a>
-</div>
+    <div class="table-wrap">
+        <table id="reg-table" style="display: none;">
+            <thead>
+                <tr>
+                    <th scope="col">報名者姓名</th>
+                    <th scope="col">聯絡電話</th>
+                    <th scope="col">報名時間</th>
+                </tr>
+            </thead>
+            <tbody id="reg-list"></tbody>
+        </table>
+    </div>
+
+    <div id="message" class="muted">載入中...</div>
+</main>
 
 <script src="js/api.js"></script>
 <script>
@@ -44,6 +57,7 @@
         }
 
         document.getElementById('event-name').textContent = data.event.title;
+        document.getElementById('reg-count').textContent = data.count ?? (data.registrations || []).length;
 
         if (!data.registrations || data.registrations.length === 0) {
             message.textContent = '目前尚無報名。';

@@ -3,27 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>🏚️ 廢墟活動平台 - 新增活動</title>
+    <title>新增活動｜活動報名平台</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="container narrow">
-    <h1>🛠️ 後台：新增新的活動</h1>
-    <form id="create-form">
-        <label for="title">活動名稱（必填）：</label>
-        <input type="text" id="title" required maxlength="100" placeholder="例如：失落古宅探索">
+<main class="container narrow">
+    <a href="index.html" class="back-link">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+        返回活動清單
+    </a>
 
-        <label for="description">活動說明：</label>
-        <textarea id="description" rows="4" placeholder="請輸入活動詳細說明"></textarea>
+    <header class="page-head">
+        <div>
+            <h1>新增活動</h1>
+            <p class="lead">填寫活動資訊，建立後會出現在活動清單中。</p>
+        </div>
+    </header>
 
-        <label for="event_date">活動時間：</label>
-        <input type="datetime-local" id="event_date" required>
+    <form id="create-form" class="panel form-panel">
+        <div class="field">
+            <label for="title">活動名稱<span class="field-tag required">必填</span></label>
+            <input type="text" id="title" required maxlength="100" placeholder="例如：迎新晚會">
+        </div>
 
-        <button type="submit" id="submit-btn">➕ 建立新活動</button>
+        <div class="field">
+            <label for="description">活動說明<span class="field-tag">選填</span></label>
+            <textarea id="description" rows="4" placeholder="地點、內容、注意事項等"></textarea>
+        </div>
+
+        <div class="field-row">
+            <div class="field">
+                <label for="event_date">活動時間<span class="field-tag required">必填</span></label>
+                <input type="datetime-local" id="event_date" required>
+            </div>
+
+            <div class="field">
+                <label for="deadline">報名截止時間<span class="field-tag">選填</span></label>
+                <input type="datetime-local" id="deadline" aria-describedby="deadline-hint">
+                <p id="deadline-hint" class="hint">不填表示不截止；不可晚於活動時間。</p>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" id="submit-btn" class="btn btn-primary">建立活動</button>
+        </div>
     </form>
-    <hr>
-    <a href="index.html" class="back-link">⬅️ 返回活動清單</a>
-</div>
+</main>
 
 <script src="js/api.js"></script>
 <script>
@@ -32,11 +57,17 @@
         const data = {
             title: document.getElementById('title').value.trim(),
             description: document.getElementById('description').value.trim(),
-            event_date: document.getElementById('event_date').value.replace('T', ' ')
+            event_date: document.getElementById('event_date').value.replace('T', ' '),
+            deadline: document.getElementById('deadline').value.replace('T', ' ')
         };
 
         if (!data.title) {
             alert('活動名稱不可只有空白！');
+            return;
+        }
+        // 格式都是 YYYY-MM-DD HH:MM，可以直接用字串比較先後
+        if (data.deadline && data.event_date && data.deadline > data.event_date) {
+            alert('報名截止時間不可晚於活動時間！');
             return;
         }
 

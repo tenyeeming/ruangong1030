@@ -3,22 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>🏚️ 廢墟活動平台 - 活動清單</title>
+    <title>活動清單｜活動報名平台</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="container">
-    <h1>🏚️ 廢墟版活動報名平台 (基本款)</h1>
-    <div style="margin-bottom: 20px;">
-        <a href="create.html" class="btn">➕ 新增活動</a>
-    </div>
+<main class="container">
+    <header class="page-head">
+        <div>
+            <h1>活動報名平台</h1>
+            <p class="lead">瀏覽目前的活動，選好就能直接報名。</p>
+        </div>
+        <a href="create.html" class="btn btn-primary">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            新增活動
+        </a>
+    </header>
 
-    <h2>📅 可報名活動清單</h2>
-    <div id="events-list"><p class="muted">載入中...</p></div>
-</div>
+    <section aria-labelledby="list-heading">
+        <h2 id="list-heading" class="section-head">活動清單</h2>
+        <div id="events-list" class="event-grid"><p class="muted">載入中...</p></div>
+    </section>
+</main>
 
 <script src="js/api.js"></script>
 <script>
+    // 靜態圖示（不含使用者資料）
+    const ICON_CALENDAR = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>';
+    const ICON_CLOCK = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>';
+    const ICON_USERS = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.4 3.2-5.5 6.5-5.5s5.9 2.1 6.5 5.5"/><path d="M16 4.7a3.5 3.5 0 0 1 0 6.6M18.5 14.8c1.6.8 2.7 2.6 3 5.2"/></svg>';
+
     async function renderEvents() {
         const listDiv = document.getElementById('events-list');
         const events = await getEvents();
@@ -33,16 +46,26 @@
         }
 
         listDiv.innerHTML = events.map(evt => `
-            <div class="activity-card">
-                <div>
-                    <strong>【${escapeHtml(evt.title)}】</strong>
-                    <p>時間：${escapeHtml(evt.event_date || '未定')} | 說明：${escapeHtml(evt.description || '無')}</p>
+            <article class="event-card${evt.is_closed ? ' closed' : ''}">
+                <div class="event-card-head">
+                    <h3 class="event-title">${escapeHtml(evt.title)}</h3>
+                    ${evt.is_closed
+                        ? '<span class="badge badge-closed">已截止</span>'
+                        : '<span class="badge badge-open">報名中</span>'}
                 </div>
-                <div class="btn-group">
-                    <a href="register.html?id=${encodeURIComponent(evt.id)}" class="btn">📝 報名</a>
-                    <a href="registrations.html?id=${encodeURIComponent(evt.id)}" class="btn btn-secondary">📊 名單</a>
+                <p class="event-desc">${escapeHtml(evt.description || '無說明')}</p>
+                <dl class="event-meta">
+                    <div><dt>${ICON_CALENDAR}活動時間</dt><dd>${escapeHtml(evt.event_date || '未定')}</dd></div>
+                    <div><dt>${ICON_CLOCK}報名截止</dt><dd>${escapeHtml(evt.deadline || '不限')}</dd></div>
+                    <div><dt>${ICON_USERS}報名人數</dt><dd>目前 <span class="count">${Number(evt.count) || 0}</span> 人</dd></div>
+                </dl>
+                <div class="card-actions">
+                    ${evt.is_closed
+                        ? '<button type="button" class="btn btn-disabled" disabled>已截止</button>'
+                        : `<a href="register.html?id=${encodeURIComponent(evt.id)}" class="btn btn-primary">我要報名</a>`}
+                    <a href="registrations.html?id=${encodeURIComponent(evt.id)}" class="btn btn-secondary">報名名單</a>
                 </div>
-            </div>
+            </article>
         `).join('');
     }
     renderEvents();

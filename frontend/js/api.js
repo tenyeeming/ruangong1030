@@ -2,8 +2,10 @@ const USE_MOCK = false;          // 只開前端、不跑後端時改成 true
 const BASE = "/api";
 
 const mockEvents = [
-  { id: 1, title: "迎新晚會", description: "地點：活動中心", event_date: "2026-11-10 18:00" },
-  { id: 2, title: "程式讀書會", description: "地點：E301", event_date: "2026-11-15 19:00" },
+  { id: 1, title: "迎新晚會", description: "地點：活動中心", event_date: "2026-11-10 18:00",
+    deadline: "2026-11-08 23:59", is_closed: false, count: 1 },
+  { id: 2, title: "程式讀書會", description: "地點：E301", event_date: "2026-11-15 19:00",
+    deadline: "2026-10-01 23:59", is_closed: true, count: 0 },
 ];
 
 // 使用者輸入的內容放進 innerHTML 前一定要先跳脫，避免 XSS
@@ -49,6 +51,7 @@ async function register(eventId, data) {
 async function getRegistrations(eventId) {
   if (USE_MOCK) return {
     event: { id: eventId, title: "迎新晚會" },
+    count: 1,
     registrations: [{ name: "王小明", phone: "0912345678", created_at: "2026-10-30 14:00" }],
   };
   return request(`${BASE}/events/${encodeURIComponent(eventId)}/registrations`);
