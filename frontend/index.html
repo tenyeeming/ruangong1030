@@ -2,16 +2,9 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>🏚️ 廢墟活動平台 - 活動清單</title>
-    <style>
-        body { background-color: #1a1a1a; color: #d4d4d4; font-family: sans-serif; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; border: 2px dashed #555; padding: 20px; background-color: #111; }
-        h1 { color: #8b0000; border-bottom: 1px solid #444; padding-bottom: 10px; }
-        .btn { background-color: #8b0000; color: #fff; border: 1px solid #555; padding: 10px 15px; cursor: pointer; text-decoration: none; font-weight: bold; display: inline-block; }
-        .btn:hover { background-color: #ff0000; }
-        .activity-card { border-left: 4px solid #8b0000; background: #222; padding: 15px; margin: 15px 0; display: flex; justify-content: space-between; align-items: center; }
-        .btn-group .btn { margin-left: 5px; padding: 5px 10px; font-size: 14px; }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <div class="container">
@@ -19,36 +12,38 @@
     <div style="margin-bottom: 20px;">
         <a href="create.html" class="btn">➕ 新增活動</a>
     </div>
-    
+
     <h2>📅 可報名活動清單</h2>
-    <div id="events-list"><!-- 由 JS 動態渲染 --></div>
+    <div id="events-list"><p class="muted">載入中...</p></div>
 </div>
 
 <script src="js/api.js"></script>
 <script>
     async function renderEvents() {
         const listDiv = document.getElementById('events-list');
-        try {
-            const events = await getEvents();
-            if (events.length === 0) {
-                listDiv.innerHTML = '<p style="color: #666;">目前尚無任何活動。</p>';
-                return;
-            }
-            listDiv.innerHTML = events.map(evt => `
-                <div class="activity-card">
-                    <div>
-                        <strong>【${evt.title}】</strong>
-                        <p style="margin: 5px 0 0 0; color: #888;">時間：${evt.event_date} | 說明：${evt.description}</p>
-                    </div>
-                    <div class="btn-group">
-                        <a href="register.html?id=${evt.id}" class="btn">📝 報名</a>
-                        <a href="registrations.html?id=${evt.id}" class="btn" style="background-color: #444;">📊 名單</a>
-                    </div>
-                </div>
-            `).join('');
-        } catch (err) {
-            listDiv.innerHTML = '<p style="color: red;">載入失敗。</p>';
+        const events = await getEvents();
+
+        if (!Array.isArray(events)) {
+            listDiv.innerHTML = `<p class="error">載入失敗：${escapeHtml(events.error)}</p>`;
+            return;
         }
+        if (events.length === 0) {
+            listDiv.innerHTML = '<p class="muted">目前尚無任何活動。</p>';
+            return;
+        }
+
+        listDiv.innerHTML = events.map(evt => `
+            <div class="activity-card">
+                <div>
+                    <strong>【${escapeHtml(evt.title)}】</strong>
+                    <p>時間：${escapeHtml(evt.event_date || '未定')} | 說明：${escapeHtml(evt.description || '無')}</p>
+                </div>
+                <div class="btn-group">
+                    <a href="register.html?id=${encodeURIComponent(evt.id)}" class="btn">📝 報名</a>
+                    <a href="registrations.html?id=${encodeURIComponent(evt.id)}" class="btn btn-secondary">📊 名單</a>
+                </div>
+            </div>
+        `).join('');
     }
     renderEvents();
 </script>
