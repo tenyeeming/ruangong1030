@@ -1,19 +1,22 @@
-"""Flask 啟動入口與本機測試命令；沒有實作組員的活動 API。"""
+"""Flask 啟動入口與本機測試命令；整合活動 API、報名 API 與前端頁面。"""
 
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import click
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory
 from werkzeug.exceptions import HTTPException
 
 from . import db
+from .events import events_bp
 from .registrations import registrations_bp
+
+FRONTEND_DIR = Path(__file__).resolve().parents[1] / "frontend"
 
 
 def create_app(test_config=None):
-    app = Flask(__name__, instance_relative_config=True)
+    app = Flask(__name__, instance_relative_config=True, static_folder=None)
     app.json.ensure_ascii = False
     app.config.from_mapping(
         DB_DRIVER="sqlite",
@@ -30,9 +33,30 @@ def create_app(test_config=None):
         app.config.update(test_config)
     if app.config["DB_DRIVER"] not in ("sqlite", "mysql"):
         raise ValueError("SIGNUP_DB_DRIVER 必須是 sqlite 或 mysql")
+    # from_prefixed_env 會把純數字密碼解析成 int，PyMySQL 只接受字串
+    app.config["MYSQL_PASSWORD"] = str(app.config["MYSQL_PASSWORD"])
 
     db.init_app(app)
+    app.register_blueprint(events_bp)
     app.register_blueprint(registrations_bp)
+
+    # 前端與 API 同一個來源，前端不需要 CORS。
+    # 只開放頁面、css、js 的網址；不用萬用路由，API 打錯方法才會回 405 而不是 404。
+    @app.get("/")
+    def index():
+        return send_from_directory(FRONTEND_DIR, "index.html")
+
+    @app.get("/<page>.html")
+    def page(page):
+        return send_from_directory(FRONTEND_DIR, f"{page}.html")
+
+    @app.get("/css/<path:filename>")
+    def css(filename):
+        return send_from_directory(FRONTEND_DIR / "css", filename)
+
+    @app.get("/js/<path:filename>")
+    def js(filename):
+        return send_from_directory(FRONTEND_DIR / "js", filename)
 
     @app.errorhandler(HTTPException)
     def http_error(exception):

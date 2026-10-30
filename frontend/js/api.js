@@ -1,4 +1,4 @@
-const USE_MOCK = true;           // 後端好了改成 false
+const USE_MOCK = false;          // 只開前端、不跑後端時改成 true
 const BASE = "/api";
 
 const mockEvents = [
