@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>🏚️ 廢墟活動平台 - 填寫報名表</title>
+    <style>
+        body { background-color: #1a1a1a; color: #d4d4d4; font-family: sans-serif; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; border: 2px dashed #555; padding: 20px; background-color: #111; }
+        h1 { color: #8b0000; border-bottom: 1px solid #444; padding-bottom: 10px; }
+        input, button { background-color: #2a2a2a; border: 1px solid #555; color: #fff; padding: 8px; width: 95%; margin-bottom: 15px; }
+        button { background-color: #8b0000; font-weight: bold; cursor: pointer; width: 100%; }
+        button:hover { background-color: #ff0000; }
+        .back-link { color: #888; text-decoration: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>📝 填寫活動報名表</h1>
+    <p style="color:#8b0000; font-weight: bold; font-size: 18px;">
+        您正在報名：<span id="act-title">載入中...</span>
+    </p>
+    
+    <form id="register-form">
+        <label>姓名（必填）：</label>
+        <input type="text" id="user-name" required placeholder="請輸入您的真實姓名">
+        
+        <label>連絡電話（必填，格式為09xxxxxxxx）：</label>
+        <input type="tel" id="user-phone" required placeholder="例如：0912345678">
+        
+        <button type="submit">📬 送出完成報名</button>
+    </form>
+    <hr style="border-color: #333;">
+    <a href="index.html" class="back-link">⬅️ 返回活動清單</a>
+</div>
+
+<script src="js/api.js"></script>
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const eventId = urlParams.get('id');
+
+    // 模擬動態抓取該活動名稱
+    async function loadActivityName() {
+        const events = await getEvents();
+        const currentEvent = events.find(e => e.id == eventId);
+        document.getElementById('act-title').innerText = currentEvent ? currentEvent.title : '未知活動';
+    }
+    loadActivityName();
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const name = document.getElementById('user-name').value.trim();
+        const phone = document.getElementById('user-phone').value.trim();
+
+        // Step 4：驗證電話格式
+        const phoneRegex = /^09\d{8}$/;
+        if (!phoneRegex.test(phone)) {
+            alert('手機號碼格式不正確，請輸入09開頭的10位數字！');
+            return;
+        }
+
+        const res = await register(eventId, { name, phone });
+        if (res.ok) {
+            alert('報名成功！');
+            window.location.href = 'index.html';
+        } else {
+            alert('報名失敗：' + res.error);
+        }
+    });
+</script>
+</body>
+</html>
